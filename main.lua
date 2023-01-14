@@ -176,20 +176,20 @@ local function loadModules(setLoadingPercentage)
 	repeat
 		task.wait()
 	until loadedModules >= modulesToLoad or loadingError
-
+	
 	if not loadingError then
-		for _, moduleData in next, loadedResponses do
-			local module = loadstring(moduleData.response)
-			local moduleEnv = getfenv(module)
-			for _, appendingModule in next, loadedResponses do
-				if appendingModule.response then
-					moduleEnv[appendingModule.name] = loadstring(appendingModule.response)()
+			for _, moduleData in next, loadedResponses do
+				local module = loadstring(moduleData.response)
+				local moduleEnv = getfenv(module)
+				for _, appendingModule in next, loadedResponses do
+					if appendingModule.response then
+						moduleEnv[appendingModule.name] = loadstring(appendingModule.response)()
+					end
 				end
-			end
-			setfenv(module, moduleEnv)
+				setfenv(module, moduleEnv)
 
-			getfenv()[moduleData.name] = module()
-		end
+				getfenv()[moduleData.name] = module()
+			end
 	end
 
 	return loadingError
@@ -266,6 +266,19 @@ function Library:init()
 			setLoadingPercentage(dule/moduleCount)
 		end
 
+	end
+	
+	if RS:IsStudio() then
+		for moduleName, _ in next, modules do
+			for func in getfenv()[moduleName] do
+				for moduleToAdd, _ in next, modules do
+					local moduleFunction = getfenv()[moduleName][func]
+					if type(moduleFunction) == "function" then
+						getfenv(moduleFunction)[moduleToAdd] = getfenv()[moduleToAdd]
+					end
+				end
+			end
+		end
 	end
 
 	wait(0.25)
